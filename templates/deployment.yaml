@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ .Release.Name }}
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  minReadySeconds: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 50%
+      maxUnavailable: 0
+  revisionHistoryLimit: 3
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+      prodType: {{ .Values.prodType }}
+  template:
+    metadata:
+      name: {{ .Release.Name }}
+      labels:
+        app: {{ .Release.Name }}
+        prodType: {{ .Values.prodType }}
+        deploymentType: {{ .Values.deploymentType }}
+        appType: {{ .Values.appType }}
+      {{- if eq .Values.appType "dapr" }}
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: {{ .Release.Name }}
+        dapr.io/app-port: "80"  
+      {{- end }}
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - {{ .Release.Name }}
+              topologyKey: kubernetes.io/hostname
+            weight: 90
+      containers:
+      - name: {{ .Release.Name }}
+        image: {{ .Values.dockerRepository }}/{{ .Values.containerNamespace }}/{{ .Release.Name }}
+        imagePullPolicy: IfNotPresent
+        envFrom:
+          - configMapRef: 
+              name: default-conf
+        livenessProbe:
+          httpGet: 
+            port: 80
+            path: /heartbeat
+          initialDelaySeconds: 10
+          failureThreshold: 15
+          timeoutSeconds: 3
+        readinessProbe:
+          httpGet:
+            port: 80
+            path: /healthcheck
+          initialDelaySeconds: 12
+          failureThreshold: 8
+        startupProbe:
+          httpGet:
+            port: 80
+            path: /heartbeat
+          failureThreshold: 10
+          periodSeconds: 6
+          initialDelaySeconds: 10
+          timeoutSeconds: 3
+        ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+            - name: grpc
+              containerPort: 81
+              protocol: TCP
+        resources:
+        {{- if eq .Values.deploymentType  "large" }}
+          {{- toYaml .Values.largeResources | nindent 10 }}
+        {{- else if eq .Values.deploymentType  "small" }}
+          {{- toYaml .Values.smallResources | nindent 10 }}
+        {{- else if eq .Values.deploymentType  "work"}}
+          {{- toYaml .Values.workResources | nindent 10 }}
+        {{- else }}
+          {{- toYaml .Values.normalResources | nindent 10 }}
+        {{- end }}

@@ -1,0 +1,14 @@
+{{- if and (eq .Values.prodType "prod") (ne .Values.deploymentType "admin") }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  endpoints:
+  - interval: 10s
+    port: http
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+{{- end }}

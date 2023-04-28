@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.prodType }}-svc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}
+    prodType: {{ .Values.prodType }}
+spec:
+  selector:
+    app: {{ .Release.Name }}
+    prodType: {{ .Values.prodType }}
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+    - name: grpc
+      port: 81
+      targetPort: 81
+  topologyKeys:
+    - "kubernetes.io/hostname"
+    - "*"

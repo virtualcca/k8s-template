@@ -1,0 +1,53 @@
+prodType: prod
+deploymentType: normal
+replicaCount: 1
+dockerRepository: [[Repository]]
+hostSuffix: [[hostSuffix]]
+appType: app
+
+ingress:
+  annotations: 
+    kubernetes.io/ingress.class: [[ingresClass]]
+    kubernetes.io/ingress.subnetId: [[ingressSubnetId]]
+    nginx.ingress.kubernetes.io/use-regex: "true"
+
+#Small的资源配额
+smallResources:
+  requests:
+    cpu: 1000m
+    memory: 2048Mi
+  limits:
+    cpu: 1000m
+    memory: 2048Mi
+
+#普通情况（默认）的资源配额
+normalResources: 
+  requests:
+    cpu: 4000m
+    memory: 8192Mi
+  limits:
+    cpu: 4000m
+    memory: 8192Mi
+
+#核心站点的资源配额
+largeResources: 
+  requests:
+    cpu: 4000m
+    memory: 8192Mi
+  limits:
+    cpu: 4000m
+    memory: 8192Mi
+
+#Work类型站点的资源配额
+workResources:
+  requests:
+    cpu: 2000m
+    memory: 4096Mi
+  limits:
+    cpu: 2000m
+    memory: 4096Mi
+
+#TLS配置
+tlsConfig:
+  tls:
+  - secretName: [[tlsSecretName]]
